@@ -26,15 +26,9 @@ This repository implements automated data ingestion, an embedded analytical data
    - [Stage 3: Machine Learning Churn Prediction](#stage-3-machine-learning-churn-prediction-train_churn_modelpy)
    - [Stage 4: Executive Analytics Dashboard & Power BI](#stage-4-interactive-executive-dashboard-dashboardhtml)
    - [Stage 5: Real-Time FastAPI Scoring Microservice](#stage-5-production-ready-churn-scoring-api-apppy)
-6. [Core Technical & Machine Learning Concepts (Interview Deep Dive)](#6-core-technical--machine-learning-concepts-interview-deep-dive)
-   - [Target Leakage Prevention](#1-target-leakage-prevention-critical-ml-concept)
-   - [Purchase Velocity: The #1 Predictive Feature](#2-purchase-velocity-the-1-predictive-feature)
-   - [Handling Class Imbalance & Metric Selection](#3-handling-class-imbalance--metric-selection)
-   - [SQL Window Functions & RFM Quintiles](#4-sql-window-functions--rfm-quintiles-ntile5)
-   - [FastAPI Microservice Design Patterns](#5-fastapi-microservice-design-patterns)
-7. [Comprehensive Interview Q&A (Cheat Sheet)](#7-comprehensive-interview-qa-cheat-sheet)
-8. [Quickstart & Execution Guide](#8-quickstart--execution-guide)
-9. [Automated Testing & Quality Assurance](#9-automated-testing--quality-assurance)
+6. [Quickstart & Execution Guide](#6-quickstart--execution-guide)
+7. [Automated Testing & Quality Assurance](#7-automated-testing--quality-assurance)
+8. [License](#8-license)
 
 ---
 
@@ -231,64 +225,7 @@ flowchart TD
 
 ---
 
-## 6. Core Technical & Machine Learning Concepts (Interview Deep Dive)
-
-### 1. Target Leakage Prevention (Critical ML Concept)
-> [!IMPORTANT]
-> **Why is `Recency` NOT included in the model features?**
-> The target variable `Is_Churned` is defined as `Recency > 90 days`. If `Recency` were included as an input feature, the Random Forest model would learn a trivial single-split rule (`Recency > 90`) and achieve a 100% false accuracy score. In a real-time production system, when an active customer visits the platform today, their recency is 0, so that feature provides zero forward-looking signal. To eliminate data leakage, `Recency` was used **strictly** to define the ground-truth label, and the model was forced to learn churn patterns purely from behavioral and velocity dynamics.
-
-### 2. Purchase Velocity: The #1 Predictive Feature
-- **Formula**:
-  $$\text{PurchaseVelocity} = \frac{\text{Frequency}}{\text{CustomerTenure} + 1}$$
-- **Why it explains 50.5% of the model**:
-  Raw frequency is biased toward older customers. A customer with 5 purchases across 2 years has a low purchase velocity ($0.0068$ orders/day), whereas a customer with 5 purchases across 30 days has a high purchase velocity ($0.161$ orders/day). When a customer's purchase cadence decelerates relative to their tenure, it acts as a primary signal of disengagement weeks before they cross the 90-day churn threshold.
-
-### 3. Handling Class Imbalance & Metric Selection
-- **The Imbalance Problem**:
-  In our customer base, **66.6% are Active** and **33.4% are Churned**. A naive baseline model that blindly predicts "Active" for every customer would achieve 66.6% accuracy while failing to prevent a single lost account.
-- **Solution**:
-  - We used `class_weight="balanced"` in `RandomForestClassifier`, which inversely weights sample classes proportional to class frequencies.
-  - **Priority Metric**: **Recall (Sensitivity)** on the churn class. In retention marketing, the cost of a **False Negative** (losing a high-value customer because the model failed to flag them) is vastly higher than the cost of a **False Positive** (sending a discount email to a customer who might have stayed anyway). Our model achieves **88.97% Recall** on test data.
-
-### 4. SQL Window Functions & RFM Quintiles (`NTILE(5)`)
-- Instead of arbitrary hardcoded dollar or order cutoffs, we used SQL window functions:
-  ```sql
-  NTILE(5) OVER (ORDER BY Recency ASC) AS R_Score_Raw,
-  NTILE(5) OVER (ORDER BY Frequency ASC) AS F_Score,
-  NTILE(5) OVER (ORDER BY Monetary ASC) AS M_Score
-  ```
-- **Why `NTILE(5)`?**: Distributes customers into 5 equal percentiles (quintiles), normalizing right-skewed e-commerce distributions and ensuring that segmentation scales smoothly as the database grows.
-
-### 5. FastAPI Microservice Design Patterns
-- **Asynchronous Non-Blocking Execution**: Built on ASGI (Uvicorn), capable of handling high-concurrency requests with low memory footprints.
-- **In-Memory Lifespan Model Store**: Pre-loads `churn_model.joblib` during application startup via FastAPI's `@asynccontextmanager(app)` lifespan pattern. Inference requests execute in $\approx 2\text{–}5\text{ms}$ with zero disk I/O.
-- **Pydantic Validation**: Protects model inference from invalid input types, non-positive order counts, and negative spend values, automatically responding with HTTP 422 error descriptions.
-
----
-
-## 7. Comprehensive Interview Q&A (Cheat Sheet)
-
-### Q1: "Can you give a 60-second elevator pitch of this project?"
-> *"I designed and built an end-to-end customer churn and cohort retention system using 541k real-world e-commerce transactions. I engineered a pipeline that cleans raw sales data into an indexed SQLite database, runs SQL RFM window analytics to segment 4,338 customers, and trains a balanced Random Forest model that predicts customer churn with 86.5% accuracy, 89.0% churn recall, and an ROC-AUC of 0.9558. Finally, I productionized the model into an asynchronous FastAPI microservice with automated test suites and built an interactive executive dashboard."*
-
-### Q2: "Why did you choose Random Forest over XGBoost, LightGBM, or Deep Learning?"
-> *"For this dataset (~4,300 customers with 9 features), a tuned Random Forest provides the ideal balance between performance, robustness, and interpretability. Deep learning is prone to overfitting on tabular data of this scale. While XGBoost is competitive, Random Forest offers lower hyperparameter sensitivity, does not require feature scaling, naturally resists multicollinearity, and directly outputs reliable tree-based feature importances and calibrated class probabilities without heavy tuning."*
-
-### Q3: "What were your most significant business findings from the cohort analysis?"
-> *"First, our December 2010 acquisition cohort showed an exceptional long-term retention rate, dropping to 36.6% in Month 1 but rebounding to 50.3% in Month 11 during the holiday shopping season. Second, subsequent cohorts suffered an immediate ~75% drop between Month 0 and Month 1. This identified our primary business opportunity: introducing an automated 14-to-30-day post-first-purchase onboarding sequence to stem early drop-off."*
-
-### Q4: "How did you translate model probabilities into operational business decisions?"
-> *"Rather than simply returning a raw 0 or 1 label, the FastAPI service maps calibrated probabilities into three actionable risk tiers: High Risk (>70%), Medium Risk (30–70%), and Low Risk (<30%). For each tier, the API dynamically assesses lifetime spend to recommend interventions: high-spend high-risk accounts receive VIP account-manager outreach with 20% reactivation credits, medium-risk customers enter category-replenishment drip campaigns, and low-risk accounts are targeted for VIP loyalty expansion and upselling."*
-
-### Q5: "How would you scale this pipeline to handle 100 million transactions?"
-> *"1. **Data Layer**: Migrate from SQLite to a distributed columnar analytical warehouse like Snowflake, BigQuery, or Amazon Redshift, using dbt (data build tool) for scheduled transformation runs.*  
-> *2. **ML Pipeline**: Transition model training to Apache Spark MLlib or distributed Ray/LightGBM clusters, versioning experiments and artifacts using MLflow.*  
-> *3. **Inference Serving**: Containerize the FastAPI application via Docker, deploy across a Kubernetes cluster with an Application Load Balancer, and implement a Redis cache for customer feature vectors to ensure sub-millisecond p99 inference latency."*
-
----
-
-## 8. Quickstart & Execution Guide
+## 6. Quickstart & Execution Guide
 
 ### Prerequisites
 Clone the repository and install all dependencies:
@@ -366,7 +303,7 @@ The health endpoint exposes the model version and SHA-256 checksum so deployment
 
 ---
 
-## 9. Automated Testing & Quality Assurance
+## 7. Automated Testing & Quality Assurance
 
 The project includes two automated test suites:
 
@@ -383,6 +320,10 @@ Validates SQLite database integrity (record counts, non-negativity), RFM CSV out
 python test_pipeline.py -v
 ```
 *Result: 4 pipeline tests passing in the current suite.*
+
+## 8. License
+
+This project is licensed under the MIT License.
 
 ### Continuous Integration
 GitHub Actions runs Python compilation and both test suites on every push and pull request using [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
