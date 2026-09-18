@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+.git/
+.github/
+analytics.db
+campaigns.db
+online_retail.csv
+*.log
+.env

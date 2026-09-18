@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.db
+online_retail.csv
+*.log
+.env
+.venv/
+venv/
+
+# Local tooling and generated system files
+.DS_Store
+.pytest_cache/
+.coverage

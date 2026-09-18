@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E-Commerce Customer Churn & Cohort Analytics Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0b0f19;
+      --bg-secondary: #111827;
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-blue: #38bdf8;
+      --accent-indigo: #818cf8;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --glow-blue: rgba(56, 189, 248, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: radial-gradient(circle at 10% 20%, #0f172a 0%, #020617 90%);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 24px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 28px;
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent-blue);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-meta {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: var(--accent-emerald);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-emerald);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent-emerald);
+    }
+
+    /* Tabs */
+    .tabs-nav {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      background: rgba(17, 24, 39, 0.6);
+      padding: 6px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      width: fit-content;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 20px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-btn.active {
+      background: var(--accent-blue);
+      color: #0b0f19;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+    }
+
+    .tab-pane {
+      display: none;
+      animation: fadeIn 0.3s ease forwards;
+    }
+    .tab-pane.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* KPI Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .kpi-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .kpi-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+    .kpi-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .kpi-value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+    .kpi-subtext {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* Card Panels */
+    .panel-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .panel-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .panel-badge {
+      font-size: 0.75rem;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 4px 10px;
+      border-radius: 6px;
+      color: var(--accent-blue);
+      font-weight: 600;
+    }
+
+    /* Data Tables */
+    .table-container {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      text-align: left;
+    }
+    th {
+      background: rgba(17, 24, 39, 0.9);
+      padding: 12px 16px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border-color);
+    }
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+    }
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-champions { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .badge-loyal { background: rgba(56, 189, 248, 0.2); color: #38bdf8; }
+    .badge-at-risk { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .badge-churned { background: rgba(244, 63, 94, 0.2); color: #f87171; }
+    .badge-other { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
+
+    .badge-high-risk { background: rgba(244, 63, 94, 0.25); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.4); }
+    .badge-medium-risk { background: rgba(245, 158, 11, 0.25); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .badge-low-risk { background: rgba(16, 185, 129, 0.25); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+    /* Heatmap styling */
+    .heatmap-cell {
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.8rem;
+      border-radius: 4px;
+      padding: 8px 4px;
+    }
+
+    /* Bars */
+    .bar-container {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.06);
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Grid columns */
+    .split-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 960px) {
+      .split-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* DAX Code block */
+    pre {
+      background: #020617;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 16px;
+      border-radius: 10px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.85rem;
+      color: #38bdf8;
+      overflow-x: auto;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <span class="logo-badge">Enterprise Analytics System</span>
+        <h1>E-Commerce Churn & Cohort Intelligence</h1>
+        <p class="header-meta">Data Pipeline • SQLite Analytics • ML Random Forest • Power BI Readiness</p>
+      </div>
+      <div>
+        <div class="status-pill">
+          <span class="pulse-dot"></span> Pipeline Active (SQLite &amp; ML)
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('overview')">Executive Overview</button>
+      <button class="tab-btn" onclick="switchTab('cohorts')">Cohort Retention Matrix</button>
+      <button class="tab-btn" onclick="switchTab('ml-model')">ML Churn Model &amp; Risk Explorer</button>
+      <button class="tab-btn" onclick="switchTab('dax')">Power BI DAX Measures</button>
+    </div>
+
+    <!-- TAB 1: EXECUTIVE OVERVIEW -->
+    <div id="pane-overview" class="tab-pane active">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total Revenue</div>
+          <div class="kpi-value" style="color: #38bdf8;">$8,911,407.90</div>
+          <div class="kpi-subtext">397,884 clean transactions</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Unique Customers</div>
+          <div class="kpi-value">4,338</div>
+          <div class="kpi-subtext">18,532 distinct orders</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Average Order Value</div>
+          <div class="kpi-value">$480.87</div>
+          <div class="kpi-subtext">Total Revenue / Total Orders</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Churn Rate (90d Inactive)</div>
+          <div class="kpi-value" style="color: #f43f5e;">33.4%</div>
+          <div class="kpi-subtext">1,449 churned customers</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">At-Risk Revenue Exposure</div>
+          <div class="kpi-value" style="color: #f59e0b;">$1,135,452.58</div>
+          <div class="kpi-subtext">820 slipping high-value accounts</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Champions Share</div>
+          <div class="kpi-value" style="color: #10b981;">66.8%</div>
+          <div class="kpi-subtext">1,127 top-tier customers</div>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-title">
+          <span>RFM Customer Segmentation Breakdown</span>
+          <span class="panel-badge">Computed via SQL NTILE(5)</span>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Customer Segment</th>
+                <th>Customers</th>
+                <th>Total Spend</th>
+                <th>Revenue Share</th>
+                <th>Avg Recency</th>
+                <th>Avg Frequency</th>
+                <th>Avg Spend</th>
+              </tr>
+            </thead>
+            <tbody id="rfm-tbody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: COHORT RETENTION -->
+    <div id="pane-cohorts" class="tab-pane">
+      <div class="panel-card">
+        <div class="panel-title">
+          <span>Monthly Customer Retention Cohort Matrix</span>
+          <span class="panel-badge">13 Cohorts • Month 0 to Month 12</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
+          Tracks customer repeat purchase rates month-over-month from their initial acquisition month.
+        </p>
+        <div class="table-container">
+          <table id="cohort-table">
+            <!-- Rendered dynamically -->
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: ML CHURN MODEL -->
+    <div id="pane-ml-model" class="tab-pane">
+      <div class="split-grid">
+        <div class="panel-card">
+          <div class="panel-title">
+            <span>Model Performance Summary</span>
+            <span class="panel-badge">Random Forest (Stratified 80/20)</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 20px;">
+            <div style="background: rgba(17, 24, 39, 0.7); padding: 14px; border-radius: 10px; border: 1px solid var(--border-color);">
+              <div class="kpi-label">ROC-AUC Score</div>
+              <div style="font-size: 1.6rem; font-weight: 800; color: #38bdf8;">0.9558</div>
+              <div class="kpi-subtext">Class separation power</div>
+            </div>
+            <div style="background: rgba(17, 24, 39, 0.7); padding: 14px; border-radius: 10px; border: 1px solid var(--border-color);">
+              <div class="kpi-label">Churn Recall</div>
+              <div style="font-size: 1.6rem; font-weight: 800; color: #10b981;">89.0%</div>
+              <div class="kpi-subtext">Captures 258/290 churners</div>
+            </div>
+            <div style="background: rgba(17, 24, 39, 0.7); padding: 14px; border-radius: 10px; border: 1px solid var(--border-color);">
+              <div class="kpi-label">Accuracy</div>
+              <div style="font-size: 1.6rem; font-weight: 800; color: #f8fafc;">86.5%</div>
+              <div class="kpi-subtext">Overall correct labels</div>
+            </div>
+            <div style="background: rgba(17, 24, 39, 0.7); padding: 14px; border-radius: 10px; border: 1px solid var(--border-color);">
+              <div class="kpi-label">F1-Score</div>
+              <div style="font-size: 1.6rem; font-weight: 800; color: #818cf8;">0.8152</div>
+              <div class="kpi-subtext">Harmonic mean P &amp; R</div>
+            </div>
+          </div>
+
+          <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px;">Confusion Matrix (Test Set):</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: center; font-size: 0.85rem;">
+            <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); padding: 12px; border-radius: 8px;">
+              <div style="font-size: 1.2rem; font-weight: 700; color: #34d399;">493</div>
+              <div style="color: var(--text-muted); font-size: 0.75rem;">True Negatives (Active)</div>
+            </div>
+            <div style="background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.3); padding: 12px; border-radius: 8px;">
+              <div style="font-size: 1.2rem; font-weight: 700; color: #f87171;">85</div>
+              <div style="color: var(--text-muted); font-size: 0.75rem;">False Positives (Active flagged Churn)</div>
+            </div>
+            <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); padding: 12px; border-radius: 8px;">
+              <div style="font-size: 1.2rem; font-weight: 700; color: #fbbf24;">32</div>
+              <div style="color: var(--text-muted); font-size: 0.75rem;">False Negatives (Missed Churn)</div>
+            </div>
+            <div style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); padding: 12px; border-radius: 8px;">
+              <div style="font-size: 1.2rem; font-weight: 700; color: #38bdf8;">258</div>
+              <div style="color: var(--text-muted); font-size: 0.75rem;">True Positives (Detected Churn)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-title">
+            <span>Feature Importance Ranking</span>
+            <span class="panel-badge">Gini Impurity Reduction</span>
+          </div>
+          <div id="features-list">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-title">
+          <span>Retention Priority Queue</span>
+          <span class="panel-badge" id="priority-status">Loading live priorities</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.86rem; margin-bottom: 16px;">
+          Ranked by model churn probability, risk tier, and customer value. Campaign actions are simulated only.
+        </p>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Priority</th>
+                <th>Customer ID</th>
+                <th>RFM Segment</th>
+                <th>Value</th>
+                <th>Churn Probability</th>
+                <th>Risk Tier</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="priority-tbody">
+              <tr><td colspan="7" style="color: var(--text-muted);">Fetching current customer priorities...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-title">
+          <span>Customer Churn Risk Explorer (Top 100 Scored Customers)</span>
+          <span class="panel-badge">Full dataset exported to output/customer_churn_predictions.csv</span>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Customer ID</th>
+                <th>Country</th>
+                <th>Orders</th>
+                <th>Monetary Spend</th>
+                <th>Tenure (Days)</th>
+                <th>Churn Probability</th>
+                <th>Risk Tier</th>
+              </tr>
+            </thead>
+            <tbody id="risk-tbody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: POWER BI DAX -->
+    <div id="pane-dax" class="tab-pane">
+      <div class="panel-card">
+        <div class="panel-title">
+          <span>Essential DAX Measures for Power BI</span>
+          <span class="panel-badge">Full documentation in dax_measures.md</span>
+        </div>
+        
+        <h3 style="font-size: 1rem; color: var(--accent-blue); margin-bottom: 8px;">1. [Active Customers (90 Days)]</h3>
+        <pre>Active Customers (90 Days) = 
+CALCULATE(
+    DISTINCTCOUNT(FactTransactions[CustomerID]),
+    DATESINPERIOD(DimDate[Date], MAX(FactTransactions[InvoiceDate]), -90, DAY)
+)</pre>
+
+        <h3 style="font-size: 1rem; color: var(--accent-blue); margin-bottom: 8px;">2. [Churn Rate %]</h3>
+        <pre>Churn Rate % = 
+DIVIDE(
+    CALCULATE(DISTINCTCOUNT(DimCustomer[CustomerID]), DimCustomer[Is_Churned] = 1),
+    DISTINCTCOUNT(DimCustomer[CustomerID]),
+    0
+)</pre>
+
+        <h3 style="font-size: 1rem; color: var(--accent-blue); margin-bottom: 8px;">3. [At-Risk Revenue Exposure]</h3>
+        <pre>At-Risk Revenue Exposure = 
+CALCULATE([Total Sales], DimCustomer[Customer_Segment] = "At-Risk")</pre>
+
+        <h3 style="font-size: 1rem; color: var(--accent-blue); margin-bottom: 8px;">4. [Customer Lifetime Value (Predictive CLV)]</h3>
+        <pre>Predictive CLV = 
+DIVIDE([ARPU], IF([Churn Rate %] = 0, 0.05, [Churn Rate %]), 0)</pre>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const segmentsData = [{"Customer_Segment": "Champions", "Count": 1127, "Revenue": 5949764.25, "AvgRecency": 13.629991126885537, "AvgFrequency": 10.03371783496007, "AvgMonetary": 5279.293921916593, "RevenueShare": 66.76570432826894}, {"Customer_Segment": "Loyal Customers", "Count": 826, "Revenue": 1392043.15, "AvgRecency": 38.40556900726392, "AvgFrequency": 3.662227602905569, "AvgMonetary": 1685.282263922518, "RevenueShare": 15.620911595798459}, {"Customer_Segment": "At-Risk", "Count": 820, "Revenue": 1135452.58, "AvgRecency": 156.73048780487804, "AvgFrequency": 2.9158536585365855, "AvgMonetary": 1384.698268292683, "RevenueShare": 12.741562194678577}, {"Customer_Segment": "Churned", "Count": 604, "Revenue": 136854.22, "AvgRecency": 276.7913907284768, "AvgFrequency": 1.1009933774834437, "AvgMonetary": 226.5798344370861, "RevenueShare": 1.5357194007469908}, {"Customer_Segment": "Need Attention", "Count": 192, "Revenue": 103713.48, "AvgRecency": 52.328125, "AvgFrequency": 1.2552083333333333, "AvgMonetary": 540.1743749999999, "RevenueShare": 1.1638282206787998}, {"Customer_Segment": "Potential Loyalists", "Count": 308, "Revenue": 94309.43, "AvgRecency": 18.045454545454547, "AvgFrequency": 1.2532467532467533, "AvgMonetary": 306.199448051948, "RevenueShare": 1.0583000021803513}, {"Customer_Segment": "About To Sleep / Hibernating", "Count": 312, "Revenue": 72729.4, "AvgRecency": 120.42948717948718, "AvgFrequency": 1.1762820512820513, "AvgMonetary": 233.10705128205126, "RevenueShare": 0.8161381547802339}, {"Customer_Segment": "Promising", "Count": 149, "Revenue": 26541.39, "AvgRecency": 51.86577181208054, "AvgFrequency": 1.0, "AvgMonetary": 178.13013422818793, "RevenueShare": 0.2978361028676512}];
+    const featuresData = [{"Feature": "PurchaseVelocity", "Importance": 0.5051970958163697, "Importance_Rank": 1}, {"Feature": "CustomerTenure", "Importance": 0.1965561714953214, "Importance_Rank": 2}, {"Feature": "Frequency", "Importance": 0.111516159651904, "Importance_Rank": 3}, {"Feature": "Monetary", "Importance": 0.0685318328367055, "Importance_Rank": 4}, {"Feature": "TotalUnits", "Importance": 0.0514936143661646, "Importance_Rank": 5}, {"Feature": "DistinctProducts", "Importance": 0.0331176667429869, "Importance_Rank": 6}, {"Feature": "AvgOrderValue", "Importance": 0.0184986239162366, "Importance_Rank": 7}, {"Feature": "AvgBasketSize", "Importance": 0.0147769768397622, "Importance_Rank": 8}, {"Feature": "Is_UK", "Importance": 0.0003118583345488, "Importance_Rank": 9}];
+    const cohortData = [{"CohortMonth": "2010-12", "CohortSize": 885, "Month_0": 100.0, "Month_1": 36.61, "Month_2": 32.32, "Month_3": 38.42, "Month_4": 36.27, "Month_5": 39.77, "Month_6": 36.27, "Month_7": 34.92, "Month_8": 35.37, "Month_9": 39.55, "Month_10": 37.4, "Month_11": 50.28, "Month_12": 26.55}, {"CohortMonth": "2011-01", "CohortSize": 417, "Month_0": 100.0, "Month_1": 22.06, "Month_2": 26.62, "Month_3": 23.02, "Month_4": 32.13, "Month_5": 28.78, "Month_6": 24.7, "Month_7": 24.22, "Month_8": 29.98, "Month_9": 32.61, "Month_10": 36.45, "Month_11": 11.75, "Month_12": 0.0}, {"CohortMonth": "2011-02", "CohortSize": 380, "Month_0": 100.0, "Month_1": 18.68, "Month_2": 18.68, "Month_3": 28.42, "Month_4": 27.11, "Month_5": 24.74, "Month_6": 25.26, "Month_7": 27.89, "Month_8": 24.74, "Month_9": 30.53, "Month_10": 6.84, "Month_11": 0.0, "Month_12": 0.0}, {"CohortMonth": "2011-03", "CohortSize": 452, "Month_0": 100.0, "Month_1": 15.04, "Month_2": 25.22, "Month_3": 19.91, "Month_4": 22.35, "Month_5": 16.81, "Month_6": 26.77, "Month_7": 23.01, "Month_8": 27.88, "Month_9": 8.63, "Month_10": 0.0, "Month_11": 0.0, "Month_12": 0.0}, {"CohortMonth": "2011-04", "CohortSize": 300, "Month_0": 100.0, "Month_1": 21.33, "Month_2": 20.33, "Month_3": 21.0, "Month_4": 19.67, "Month_5": 22.67, "Month_6": 21.67, "Month_7": 26.0, "Month_8": 7.33, "Month_9": 0.0, "Month_10": 0.0, "Month_11": 0.0, "Month_12": 0.0}, {"CohortMonth": "2011-05", "CohortSize": 284, "Month_0": 100.0, "Month_1": 19.01, "Month_2": 17.25, "Month_3": 17.25, "Month_4": 20.77, "Month_5": 23.24, "Month_6": 26.41, "Month_7": 9.51, "Month_8": 0.0, "Month_9": 0.0, "Month_10": 0.0, "Month_11": 0.0, "Month_12": 0.0}, {"CohortMonth": "2011-06", "CohortSize": 242, "Month_0": 100.0, "Month_1": 17.36, "Month_2": 15.7, "Month_3": 26.45, "Month_4": 23.14, "Month_5": 33.47, "Month_6": 9.5, "Month_7": 0.0, "Month_8": 0.0, "Month_9": 0.0, "Month_10": 0.0, "Month_11": 0.0, "Month_12": 0.0}, {"CohortMonth": "2011-07", "CohortSize": 188, "Month_0": 100.0, "Month_1": 18.09, "Month_2": 20.74, "Month_3": 22.34, "Month_4": 27.13, "Month_5": 11.17, "Month_6": 0.0, "Month_7": 0.0, "Month_8": 0.0, "Month_9": 0.0, "Month_10": 0.0, "Month_11": 0.0, "Month_12": 0.0}, {"CohortMonth": "2011-08", "CohortSize": 169, "Month_0": 100.0, "Month_1": 20.71, "Month_2": 24.85, "Month_3": 24.26, "Month_4": 12.43, "Month_5": 0.0, "Month_6": 0.0, "Month_7": 0.0, "Month_8": 0.0, "Month_9": 0.0, "Month_10": 0.0, "Month_11": 0.0, "Month_12": 0.0}, {"CohortMonth": "2011-09", "CohortSize": 299, "Month_0": 100.0, "Month_1": 23.41, "Month_2": 30.1, "Month_3": 11.37, "Month_4": 0.0, "Month_5": 0.0, "Month_6": 0.0, "Month_7": 0.0, "Month_8": 0.0, "Month_9": 0.0, "Month_10": 0.0, "Month_11": 0.0, "Month_12": 0.0}, {"CohortMonth": "2011-10", "CohortSize": 358, "Month_0": 100.0, "Month_1": 24.02, "Month_2": 11.45, "Month_3": 0.0, "Month_4": 0.0, "Month_5": 0.0, "Month_6": 0.0, "Month_7": 0.0, "Month_8": 0.0, "Month_9": 0.0, "Month_10": 0.0, "Month_11": 0.0, "Month_12": 0.0}, {"CohortMonth": "2011-11", "CohortSize": 323, "Month_0": 100.0, "Month_1": 11.15, "Month_2": 0.0, "Month_3": 0.0, "Month_4": 0.0, "Month_5": 0.0, "Month_6": 0.0, "Month_7": 0.0, "Month_8": 0.0, "Month_9": 0.0, "Month_10": 0.0, "Month_11": 0.0, "Month_12": 0.0}, {"CohortMonth": "2011-12", "CohortSize": 41, "Month_0": 100.0, "Month_1": 0.0, "Month_2": 0.0, "Month_3": 0.0, "Month_4": 0.0, "Month_5": 0.0, "Month_6": 0.0, "Month_7": 0.0, "Month_8": 0.0, "Month_9": 0.0, "Month_10": 0.0, "Month_11": 0.0, "Month_12": 0.0}];
+    const topCustomers = [{"CustomerID": 18227, "Country": "United Kingdom", "Frequency": 1, "Monetary": 93.75, "CustomerTenure": 218, "Churn_Probability": 0.9982, "Risk_Level": "High Risk"}, {"CustomerID": 12353, "Country": "Bahrain", "Frequency": 1, "Monetary": 89.0, "CustomerTenure": 205, "Churn_Probability": 0.9982, "Risk_Level": "High Risk"}, {"CustomerID": 16078, "Country": "United Kingdom", "Frequency": 1, "Monetary": 79.2, "CustomerTenure": 284, "Churn_Probability": 0.998, "Risk_Level": "High Risk"}, {"CustomerID": 13391, "Country": "United Kingdom", "Frequency": 1, "Monetary": 59.8, "CustomerTenure": 204, "Churn_Probability": 0.998, "Risk_Level": "High Risk"}, {"CustomerID": 13144, "Country": "United Kingdom", "Frequency": 1, "Monetary": 110.95, "CustomerTenure": 333, "Churn_Probability": 0.998, "Risk_Level": "High Risk"}, {"CustomerID": 14821, "Country": "United Kingdom", "Frequency": 1, "Monetary": 48.8, "CustomerTenure": 367, "Churn_Probability": 0.9979, "Risk_Level": "High Risk"}, {"CustomerID": 15397, "Country": "United Kingdom", "Frequency": 1, "Monetary": 94.0, "CustomerTenure": 290, "Churn_Probability": 0.9979, "Risk_Level": "High Risk"}, {"CustomerID": 13132, "Country": "United Kingdom", "Frequency": 1, "Monetary": 77.3, "CustomerTenure": 262, "Churn_Probability": 0.9979, "Risk_Level": "High Risk"}, {"CustomerID": 15395, "Country": "United Kingdom", "Frequency": 1, "Monetary": 107.45, "CustomerTenure": 326, "Churn_Probability": 0.9979, "Risk_Level": "High Risk"}, {"CustomerID": 18120, "Country": "United Kingdom", "Frequency": 1, "Monetary": 111.15, "CustomerTenure": 215, "Churn_Probability": 0.9978, "Risk_Level": "High Risk"}, {"CustomerID": 14373, "Country": "United Kingdom", "Frequency": 1, "Monetary": 76.55, "CustomerTenure": 359, "Churn_Probability": 0.9978, "Risk_Level": "High Risk"}, {"CustomerID": 17217, "Country": "United Kingdom", "Frequency": 1, "Monetary": 113.5, "CustomerTenure": 235, "Churn_Probability": 0.9978, "Risk_Level": "High Risk"}, {"CustomerID": 18068, "Country": "United Kingdom", "Frequency": 1, "Monetary": 101.7, "CustomerTenure": 290, "Churn_Probability": 0.9978, "Risk_Level": "High Risk"}, {"CustomerID": 13185, "Country": "United Kingdom", "Frequency": 1, "Monetary": 71.4, "CustomerTenure": 268, "Churn_Probability": 0.9978, "Risk_Level": "High Risk"}, {"CustomerID": 13703, "Country": "United Kingdom", "Frequency": 1, "Monetary": 99.5, "CustomerTenure": 319, "Churn_Probability": 0.9978, "Risk_Level": "High Risk"}, {"CustomerID": 17456, "Country": "United Kingdom", "Frequency": 1, "Monetary": 249.86, "CustomerTenure": 366, "Churn_Probability": 0.9978, "Risk_Level": "High Risk"}, {"CustomerID": 14148, "Country": "United Kingdom", "Frequency": 1, "Monetary": 157.2, "CustomerTenure": 234, "Churn_Probability": 0.9977, "Risk_Level": "High Risk"}, {"CustomerID": 15729, "Country": "United Kingdom", "Frequency": 1, "Monetary": 85.0, "CustomerTenure": 213, "Churn_Probability": 0.9977, "Risk_Level": "High Risk"}, {"CustomerID": 17174, "Country": "United Kingdom", "Frequency": 1, "Monetary": 59.9, "CustomerTenure": 218, "Churn_Probability": 0.9977, "Risk_Level": "High Risk"}, {"CustomerID": 16697, "Country": "United Kingdom", "Frequency": 1, "Monetary": 112.75, "CustomerTenure": 242, "Churn_Probability": 0.9976, "Risk_Level": "High Risk"}, {"CustomerID": 12956, "Country": "United Kingdom", "Frequency": 1, "Monetary": 108.07, "CustomerTenure": 307, "Churn_Probability": 0.9976, "Risk_Level": "High Risk"}, {"CustomerID": 13551, "Country": "United Kingdom", "Frequency": 1, "Monetary": 91.8, "CustomerTenure": 320, "Churn_Probability": 0.9976, "Risk_Level": "High Risk"}, {"CustomerID": 14589, "Country": "United Kingdom", "Frequency": 1, "Monetary": 39.75, "CustomerTenure": 372, "Churn_Probability": 0.9976, "Risk_Level": "High Risk"}, {"CustomerID": 16339, "Country": "United Kingdom", "Frequency": 1, "Monetary": 109.95, "CustomerTenure": 285, "Churn_Probability": 0.9976, "Risk_Level": "High Risk"}, {"CustomerID": 16162, "Country": "United Kingdom", "Frequency": 1, "Monetary": 37.4, "CustomerTenure": 253, "Churn_Probability": 0.9976, "Risk_Level": "High Risk"}, {"CustomerID": 13508, "Country": "United Kingdom", "Frequency": 1, "Monetary": 110.97, "CustomerTenure": 244, "Churn_Probability": 0.9976, "Risk_Level": "High Risk"}, {"CustomerID": 13807, "Country": "United Kingdom", "Frequency": 1, "Monetary": 112.6, "CustomerTenure": 368, "Churn_Probability": 0.9975, "Risk_Level": "High Risk"}, {"CustomerID": 14371, "Country": "United Kingdom", "Frequency": 1, "Monetary": 100.5, "CustomerTenure": 296, "Churn_Probability": 0.9975, "Risk_Level": "High Risk"}, {"CustomerID": 13948, "Country": "United Kingdom", "Frequency": 1, "Monetary": 102.0, "CustomerTenure": 361, "Churn_Probability": 0.9975, "Risk_Level": "High Risk"}, {"CustomerID": 15083, "Country": "United Kingdom", "Frequency": 1, "Monetary": 88.2, "CustomerTenure": 257, "Churn_Probability": 0.9975, "Risk_Level": "High Risk"}, {"CustomerID": 15212, "Country": "United Kingdom", "Frequency": 1, "Monetary": 101.8, "CustomerTenure": 242, "Churn_Probability": 0.9975, "Risk_Level": "High Risk"}, {"CustomerID": 15180, "Country": "United Kingdom", "Frequency": 1, "Monetary": 87.5, "CustomerTenure": 368, "Churn_Probability": 0.9975, "Risk_Level": "High Risk"}, {"CustomerID": 15178, "Country": "United Kingdom", "Frequency": 1, "Monetary": 40.5, "CustomerTenure": 261, "Churn_Probability": 0.9975, "Risk_Level": "High Risk"}, {"CustomerID": 17906, "Country": "United Kingdom", "Frequency": 1, "Monetary": 72.9, "CustomerTenure": 248, "Churn_Probability": 0.9975, "Risk_Level": "High Risk"}, {"CustomerID": 15899, "Country": "United Kingdom", "Frequency": 1, "Monetary": 56.25, "CustomerTenure": 369, "Churn_Probability": 0.9975, "Risk_Level": "High Risk"}, {"CustomerID": 12665, "Country": "Germany", "Frequency": 1, "Monetary": 63.0, "CustomerTenure": 325, "Churn_Probability": 0.9975, "Risk_Level": "High Risk"}, {"CustomerID": 17746, "Country": "United Kingdom", "Frequency": 1, "Monetary": 110.25, "CustomerTenure": 241, "Churn_Probability": 0.9975, "Risk_Level": "High Risk"}, {"CustomerID": 14840, "Country": "United Kingdom", "Frequency": 1, "Monetary": 62.85, "CustomerTenure": 268, "Churn_Probability": 0.9975, "Risk_Level": "High Risk"}, {"CustomerID": 13161, "Country": "United Kingdom", "Frequency": 1, "Monetary": 112.75, "CustomerTenure": 314, "Churn_Probability": 0.9975, "Risk_Level": "High Risk"}, {"CustomerID": 14760, "Country": "United Kingdom", "Frequency": 1, "Monetary": 89.2, "CustomerTenure": 298, "Churn_Probability": 0.9975, "Risk_Level": "High Risk"}, {"CustomerID": 13626, "Country": "United Kingdom", "Frequency": 1, "Monetary": 257.23, "CustomerTenure": 253, "Churn_Probability": 0.9973, "Risk_Level": "High Risk"}, {"CustomerID": 16055, "Country": "United Kingdom", "Frequency": 1, "Monetary": 134.8, "CustomerTenure": 221, "Churn_Probability": 0.9973, "Risk_Level": "High Risk"}, {"CustomerID": 17102, "Country": "United Kingdom", "Frequency": 1, "Monetary": 25.5, "CustomerTenure": 262, "Churn_Probability": 0.9973, "Risk_Level": "High Risk"}, {"CustomerID": 12974, "Country": "United Kingdom", "Frequency": 1, "Monetary": 144.8, "CustomerTenure": 198, "Churn_Probability": 0.9973, "Risk_Level": "High Risk"}, {"CustomerID": 14350, "Country": "United Kingdom", "Frequency": 1, "Monetary": 282.93, "CustomerTenure": 275, "Churn_Probability": 0.9973, "Risk_Level": "High Risk"}, {"CustomerID": 15042, "Country": "United Kingdom", "Frequency": 1, "Monetary": 135.93, "CustomerTenure": 200, "Churn_Probability": 0.9973, "Risk_Level": "High Risk"}, {"CustomerID": 17956, "Country": "United Kingdom", "Frequency": 1, "Monetary": 12.75, "CustomerTenure": 250, "Churn_Probability": 0.9973, "Risk_Level": "High Risk"}, {"CustomerID": 17763, "Country": "United Kingdom", "Frequency": 1, "Monetary": 15.0, "CustomerTenure": 264, "Churn_Probability": 0.9973, "Risk_Level": "High Risk"}, {"CustomerID": 17278, "Country": "United Kingdom", "Frequency": 1, "Monetary": 246.04, "CustomerTenure": 242, "Churn_Probability": 0.9973, "Risk_Level": "High Risk"}, {"CustomerID": 16738, "Country": "United Kingdom", "Frequency": 1, "Monetary": 3.75, "CustomerTenure": 298, "Churn_Probability": 0.9973, "Risk_Level": "High Risk"}, {"CustomerID": 15279, "Country": "United Kingdom", "Frequency": 1, "Monetary": 290.51, "CustomerTenure": 355, "Churn_Probability": 0.9973, "Risk_Level": "High Risk"}, {"CustomerID": 15562, "Country": "United Kingdom", "Frequency": 1, "Monetary": 134.55, "CustomerTenure": 352, "Churn_Probability": 0.9972, "Risk_Level": "High Risk"}, {"CustomerID": 16144, "Country": "United Kingdom", "Frequency": 1, "Monetary": 175.2, "CustomerTenure": 247, "Churn_Probability": 0.9972, "Risk_Level": "High Risk"}, {"CustomerID": 17118, "Country": "United Kingdom", "Frequency": 1, "Monetary": 157.02, "CustomerTenure": 318, "Churn_Probability": 0.9971, "Risk_Level": "High Risk"}, {"CustomerID": 14368, "Country": "United Kingdom", "Frequency": 1, "Monetary": 155.0, "CustomerTenure": 320, "Churn_Probability": 0.9971, "Risk_Level": "High Risk"}, {"CustomerID": 18138, "Country": "United Kingdom", "Frequency": 1, "Monetary": 152.65, "CustomerTenure": 296, "Churn_Probability": 0.9971, "Risk_Level": "High Risk"}, {"CustomerID": 15668, "Country": "United Kingdom", "Frequency": 1, "Monetary": 76.32, "CustomerTenure": 218, "Churn_Probability": 0.9971, "Risk_Level": "High Risk"}, {"CustomerID": 13299, "Country": "United Kingdom", "Frequency": 1, "Monetary": 142.5, "CustomerTenure": 269, "Churn_Probability": 0.9971, "Risk_Level": "High Risk"}, {"CustomerID": 13809, "Country": "Cyprus", "Frequency": 1, "Monetary": 155.05, "CustomerTenure": 306, "Churn_Probability": 0.9971, "Risk_Level": "High Risk"}, {"CustomerID": 15174, "Country": "United Kingdom", "Frequency": 1, "Monetary": 135.75, "CustomerTenure": 323, "Churn_Probability": 0.9971, "Risk_Level": "High Risk"}, {"CustomerID": 15143, "Country": "United Kingdom", "Frequency": 1, "Monetary": 259.45, "CustomerTenure": 226, "Churn_Probability": 0.9971, "Risk_Level": "High Risk"}, {"CustomerID": 16193, "Country": "United Kingdom", "Frequency": 1, "Monetary": 314.45, "CustomerTenure": 237, "Churn_Probability": 0.997, "Risk_Level": "High Risk"}, {"CustomerID": 13570, "Country": "United Kingdom", "Frequency": 1, "Monetary": 239.49, "CustomerTenure": 244, "Churn_Probability": 0.997, "Risk_Level": "High Risk"}, {"CustomerID": 16679, "Country": "United Kingdom", "Frequency": 1, "Monetary": 129.75, "CustomerTenure": 367, "Churn_Probability": 0.997, "Risk_Level": "High Risk"}, {"CustomerID": 16625, "Country": "United Kingdom", "Frequency": 1, "Monetary": 333.08, "CustomerTenure": 275, "Churn_Probability": 0.997, "Risk_Level": "High Risk"}, {"CustomerID": 16425, "Country": "United Kingdom", "Frequency": 1, "Monetary": 302.7, "CustomerTenure": 303, "Churn_Probability": 0.997, "Risk_Level": "High Risk"}, {"CustomerID": 16658, "Country": "United Kingdom", "Frequency": 1, "Monetary": 123.24, "CustomerTenure": 369, "Churn_Probability": 0.997, "Risk_Level": "High Risk"}, {"CustomerID": 15843, "Country": "United Kingdom", "Frequency": 1, "Monetary": 118.95, "CustomerTenure": 304, "Churn_Probability": 0.997, "Risk_Level": "High Risk"}, {"CustomerID": 12929, "Country": "United Kingdom", "Frequency": 1, "Monetary": 117.85, "CustomerTenure": 312, "Churn_Probability": 0.997, "Risk_Level": "High Risk"}, {"CustomerID": 17678, "Country": "United Kingdom", "Frequency": 1, "Monetary": 298.11, "CustomerTenure": 264, "Churn_Probability": 0.997, "Risk_Level": "High Risk"}, {"CustomerID": 13581, "Country": "United Kingdom", "Frequency": 1, "Monetary": 118.0, "CustomerTenure": 310, "Churn_Probability": 0.997, "Risk_Level": "High Risk"}, {"CustomerID": 16297, "Country": "United Kingdom", "Frequency": 1, "Monetary": 301.9, "CustomerTenure": 269, "Churn_Probability": 0.997, "Risk_Level": "High Risk"}, {"CustomerID": 14155, "Country": "United Kingdom", "Frequency": 1, "Monetary": 118.75, "CustomerTenure": 267, "Churn_Probability": 0.997, "Risk_Level": "High Risk"}, {"CustomerID": 13052, "Country": "United Kingdom", "Frequency": 1, "Monetary": 348.15, "CustomerTenure": 213, "Churn_Probability": 0.997, "Risk_Level": "High Risk"}, {"CustomerID": 13990, "Country": "United Kingdom", "Frequency": 1, "Monetary": 311.3, "CustomerTenure": 214, "Churn_Probability": 0.997, "Risk_Level": "High Risk"}, {"CustomerID": 18185, "Country": "United Kingdom", "Frequency": 1, "Monetary": 304.25, "CustomerTenure": 250, "Churn_Probability": 0.997, "Risk_Level": "High Risk"}, {"CustomerID": 17881, "Country": "United Kingdom", "Frequency": 1, "Monetary": 133.35, "CustomerTenure": 305, "Churn_Probability": 0.997, "Risk_Level": "High Risk"}, {"CustomerID": 12623, "Country": "Germany", "Frequency": 1, "Monetary": 305.1, "CustomerTenure": 277, "Churn_Probability": 0.997, "Risk_Level": "High Risk"}, {"CustomerID": 14311, "Country": "United Kingdom", "Frequency": 1, "Monetary": 310.26, "CustomerTenure": 243, "Churn_Probability": 0.9969, "Risk_Level": "High Risk"}, {"CustomerID": 16096, "Country": "United Kingdom", "Frequency": 1, "Monetary": 320.62, "CustomerTenure": 265, "Churn_Probability": 0.9969, "Risk_Level": "High Risk"}, {"CustomerID": 14271, "Country": "United Kingdom", "Frequency": 1, "Monetary": 112.32, "CustomerTenure": 226, "Churn_Probability": 0.9969, "Risk_Level": "High Risk"}, {"CustomerID": 13369, "Country": "United Kingdom", "Frequency": 1, "Monetary": 308.28, "CustomerTenure": 366, "Churn_Probability": 0.9969, "Risk_Level": "High Risk"}, {"CustomerID": 14699, "Country": "United Kingdom", "Frequency": 1, "Monetary": 109.13, "CustomerTenure": 215, "Churn_Probability": 0.9969, "Risk_Level": "High Risk"}, {"CustomerID": 17094, "Country": "United Kingdom", "Frequency": 1, "Monetary": 302.0, "CustomerTenure": 323, "Churn_Probability": 0.9969, "Risk_Level": "High Risk"}, {"CustomerID": 17582, "Country": "United Kingdom", "Frequency": 1, "Monetary": 175.27, "CustomerTenure": 237, "Churn_Probability": 0.9969, "Risk_Level": "High Risk"}, {"CustomerID": 14339, "Country": "United Kingdom", "Frequency": 1, "Monetary": 309.52, "CustomerTenure": 243, "Churn_Probability": 0.9969, "Risk_Level": "High Risk"}, {"CustomerID": 17176, "Country": "United Kingdom", "Frequency": 1, "Monetary": 306.13, "CustomerTenure": 202, "Churn_Probability": 0.9969, "Risk_Level": "High Risk"}, {"CustomerID": 14689, "Country": "United Kingdom", "Frequency": 1, "Monetary": 112.8, "CustomerTenure": 209, "Churn_Probability": 0.9969, "Risk_Level": "High Risk"}, {"CustomerID": 13494, "Country": "United Kingdom", "Frequency": 1, "Monetary": 316.26, "CustomerTenure": 312, "Churn_Probability": 0.9969, "Risk_Level": "High Risk"}, {"CustomerID": 12852, "Country": "United Kingdom", "Frequency": 1, "Monetary": 311.55, "CustomerTenure": 295, "Churn_Probability": 0.9969, "Risk_Level": "High Risk"}, {"CustomerID": 15070, "Country": "United Kingdom", "Frequency": 1, "Monetary": 106.2, "CustomerTenure": 373, "Churn_Probability": 0.9969, "Risk_Level": "High Risk"}, {"CustomerID": 14705, "Country": "United Kingdom", "Frequency": 1, "Monetary": 179.0, "CustomerTenure": 199, "Churn_Probability": 0.9969, "Risk_Level": "High Risk"}, {"CustomerID": 16990, "Country": "United Kingdom", "Frequency": 1, "Monetary": 179.0, "CustomerTenure": 219, "Churn_Probability": 0.9969, "Risk_Level": "High Risk"}, {"CustomerID": 14981, "Country": "United Kingdom", "Frequency": 1, "Monetary": 102.12, "CustomerTenure": 247, "Churn_Probability": 0.9968, "Risk_Level": "High Risk"}, {"CustomerID": 16659, "Country": "United Kingdom", "Frequency": 1, "Monetary": 39.12, "CustomerTenure": 190, "Churn_Probability": 0.9968, "Risk_Level": "High Risk"}, {"CustomerID": 12821, "Country": "United Kingdom", "Frequency": 1, "Monetary": 92.72, "CustomerTenure": 215, "Churn_Probability": 0.9968, "Risk_Level": "High Risk"}, {"CustomerID": 12350, "Country": "Norway", "Frequency": 1, "Monetary": 334.4, "CustomerTenure": 311, "Churn_Probability": 0.9968, "Risk_Level": "High Risk"}, {"CustomerID": 14090, "Country": "United Kingdom", "Frequency": 1, "Monetary": 76.32, "CustomerTenure": 325, "Churn_Probability": 0.9968, "Risk_Level": "High Risk"}, {"CustomerID": 16148, "Country": "United Kingdom", "Frequency": 1, "Monetary": 76.32, "CustomerTenure": 297, "Churn_Probability": 0.9968, "Risk_Level": "High Risk"}, {"CustomerID": 13706, "Country": "United Kingdom", "Frequency": 1, "Monetary": 330.79, "CustomerTenure": 303, "Churn_Probability": 0.9968, "Risk_Level": "High Risk"}];
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      
+      const buttons = Array.from(document.querySelectorAll('.tab-btn'));
+      const activeBtn = buttons.find(b => b.getAttribute('onclick').includes(tabId));
+      if (activeBtn) activeBtn.classList.add('active');
+      
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // Render RFM Table
+    const rfmTbody = document.getElementById('rfm-tbody');
+    segmentsData.forEach(row => {
+      let badgeClass = 'badge-other';
+      if (row.Customer_Segment === 'Champions') badgeClass = 'badge-champions';
+      else if (row.Customer_Segment === 'Loyal Customers') badgeClass = 'badge-loyal';
+      else if (row.Customer_Segment === 'At-Risk') badgeClass = 'badge-at-risk';
+      else if (row.Customer_Segment === 'Churned') badgeClass = 'badge-churned';
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span class="badge ${badgeClass}">${row.Customer_Segment}</span></td>
+        <td style="font-weight: 600;">${row.Count.toLocaleString()}</td>
+        <td style="font-weight: 700;">$${row.Revenue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+        <td>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="min-width: 40px;">${row.RevenueShare.toFixed(1)}%</span>
+            <div class="bar-container" style="flex: 1;">
+              <div class="bar-fill" style="width: ${row.RevenueShare}%; background: var(--accent-blue);"></div>
+            </div>
+          </div>
+        </td>
+        <td>${row.AvgRecency.toFixed(1)} days</td>
+        <td>${row.AvgFrequency.toFixed(1)} orders</td>
+        <td>$${row.AvgMonetary.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+      `;
+      rfmTbody.appendChild(tr);
+    });
+
+    // Render Features
+    const featContainer = document.getElementById('features-list');
+    const maxImportance = Math.max(...featuresData.map(f => f.Importance));
+    featuresData.forEach(f => {
+      const pct = (f.Importance / maxImportance) * 100;
+      const div = document.createElement('div');
+      div.style.marginBottom = '14px';
+      div.innerHTML = `
+        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">
+          <span>${f.Feature}</span>
+          <span style="color: var(--accent-blue);">${(f.Importance * 100).toFixed(2)}%</span>
+        </div>
+        <div class="bar-container">
+          <div class="bar-fill" style="width: ${pct}%; background: linear-gradient(90deg, #38bdf8, #818cf8);"></div>
+        </div>
+      `;
+      featContainer.appendChild(div);
+    });
+
+    // Render Cohort Table
+    const cohortTable = document.getElementById('cohort-table');
+    if (cohortData.length > 0) {
+      const cols = Object.keys(cohortData[0]);
+      let thead = '<thead><tr>';
+      cols.forEach(c => {
+        thead += `<th>${c.replace('_', ' ')}</th>`;
+      });
+      thead += '</tr></thead>';
+
+      let tbody = '<tbody>';
+      cohortData.forEach(row => {
+        tbody += `<tr>`;
+        cols.forEach(c => {
+          const val = row[c];
+          if (c === 'CohortMonth') {
+            tbody += `<td style="font-weight: 700;">${val}</td>`;
+          } else if (c === 'CohortSize') {
+            tbody += `<td style="font-weight: 600;">${val.toLocaleString()}</td>`;
+          } else {
+            const num = parseFloat(val);
+            if (!isNaN(num) && num > 0) {
+              let bg = 'rgba(56, 189, 248, 0.05)';
+              let color = '#94a3b8';
+              if (num >= 40) { bg = 'rgba(16, 185, 129, 0.4)'; color = '#6ee7b7'; }
+              else if (num >= 25) { bg = 'rgba(56, 189, 248, 0.3)'; color = '#7dd3fc'; }
+              else if (num >= 15) { bg = 'rgba(129, 140, 248, 0.2)'; color = '#a5b4fc'; }
+              else { bg = 'rgba(244, 63, 94, 0.15)'; color = '#fca5a5'; }
+              tbody += `<td class="heatmap-cell" style="background: ${bg}; color: ${color};">${num.toFixed(1)}%</td>`;
+            } else {
+              tbody += `<td class="heatmap-cell" style="color: rgba(255,255,255,0.1);">-</td>`;
+            }
+          }
+        });
+        tbody += `</tr>`;
+      });
+      tbody += '</tbody>';
+      cohortTable.innerHTML = thead + tbody;
+    }
+
+    // Render Top Customers
+    const riskTbody = document.getElementById('risk-tbody');
+    topCustomers.forEach(c => {
+      let badge = 'badge-low-risk';
+      if (c.Risk_Level === 'High Risk') badge = 'badge-high-risk';
+      else if (c.Risk_Level === 'Medium Risk') badge = 'badge-medium-risk';
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-family: monospace; font-weight: 600;">#${c.CustomerID}</td>
+        <td>${c.Country}</td>
+        <td>${c.Frequency}</td>
+        <td style="font-weight: 600;">$${c.Monetary.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+        <td>${c.CustomerTenure} days</td>
+        <td style="font-weight: 700; color: ${c.Churn_Probability > 0.7 ? '#f43f5e' : '#fbbf24'};">${(c.Churn_Probability * 100).toFixed(1)}%</td>
+        <td><span class="badge ${badge}">${c.Risk_Level}</span></td>
+      `;
+      riskTbody.appendChild(tr);
+    });
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function riskBadgeClass(riskLevel) {
+      if (riskLevel === 'High Risk') return 'badge-high-risk';
+      if (riskLevel === 'Medium Risk') return 'badge-medium-risk';
+      return 'badge-low-risk';
+    }
+
+    function renderPriorityCandidates(candidates) {
+      const priorityTbody = document.getElementById('priority-tbody');
+      const priorityStatus = document.getElementById('priority-status');
+      if (!candidates.length) {
+        priorityTbody.innerHTML = '<tr><td colspan="7" style="color: var(--text-muted);">No customer transactions are loaded. Upload a CSV to generate priorities.</td></tr>';
+        priorityStatus.textContent = 'No live data';
+        return;
+      }
+
+      priorityStatus.textContent = `${candidates.length.toLocaleString()} live candidates`;
+      priorityTbody.innerHTML = candidates.slice(0, 25).map((candidate, index) => {
+        const customerId = escapeHtml(candidate.customer_id);
+        const riskLevel = escapeHtml(candidate.risk_level);
+        const badge = riskBadgeClass(candidate.risk_level);
+        const probability = Number(candidate.churn_probability || 0);
+        return `
+          <tr>
+            <td style="font-weight: 800; color: var(--accent-amber);">#${index + 1}</td>
+            <td style="font-family: monospace; font-weight: 600;">${customerId}</td>
+            <td>${escapeHtml(candidate.rfm_segment || 'Not available')}</td>
+            <td style="font-weight: 600;">$${Number(candidate.monetary_value || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            <td style="font-weight: 700; color: ${probability >= 0.7 ? '#f43f5e' : '#fbbf24'};">${(probability * 100).toFixed(1)}%</td>
+            <td><span class="badge ${badge}">${riskLevel}</span></td>
+            <td><button class="panel-badge" style="cursor: pointer; border: 1px solid rgba(56, 189, 248, 0.35); color: var(--accent-blue); background: rgba(56, 189, 248, 0.08);" onclick="simulateCampaign(${JSON.stringify(candidate.customer_id)}, ${JSON.stringify(candidate.risk_level)}, ${JSON.stringify(candidate.rfm_segment)}, ${probability}, ${Number(candidate.monetary_value || 0)})">Simulate</button></td>
+          </tr>`;
+      }).join('');
+    }
+
+    async function loadPriorityCandidates() {
+      const priorityStatus = document.getElementById('priority-status');
+      try {
+        const response = await fetch('/priority');
+        if (!response.ok) throw new Error('Priority endpoint unavailable');
+        const data = await response.json();
+        renderPriorityCandidates(data.candidates || []);
+      } catch (error) {
+        priorityStatus.textContent = 'Embedded baseline';
+        document.getElementById('priority-tbody').innerHTML = '<tr><td colspan="7" style="color: var(--text-muted);">Live priorities appear when this dashboard is served by the FastAPI application after data upload.</td></tr>';
+      }
+    }
+
+    async function simulateCampaign(customerId, riskLevel, rfmSegment, churnProbability, monetaryValue) {
+      try {
+        const response = await fetch('/campaign/generate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            customer_id: customerId,
+            risk_level: riskLevel,
+            rfm_segment: rfmSegment,
+            churn_probability: churnProbability,
+            monetary_value: monetaryValue,
+            campaign_type: riskLevel === 'High Risk' ? 'Win-Back' : 'Retention Nurture'
+          })
+        });
+        if (!response.ok) throw new Error('Campaign simulation failed');
+        window.alert(`Simulated campaign created for customer ${customerId}.`);
+      } catch (error) {
+        window.alert('Campaign simulation requires the dashboard to be served by the FastAPI application.');
+      }
+    }
+
+    loadPriorityCandidates();
+  </script>
+</body>
+</html>
